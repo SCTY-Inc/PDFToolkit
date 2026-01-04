@@ -1,21 +1,14 @@
-import os
-import base64
 from pathlib import Path
-from PIL import Image
-from io import BytesIO
-from together import Together
+
+from pdftoolkit.clients import get_together_client, api_retry
+from pdftoolkit.utils import image_to_base64
 
 
-def image_to_base64(image_path):
-    with Image.open(image_path) as img:
-        buffered = BytesIO()
-        img.save(buffered, format="JPEG")
-        return base64.b64encode(buffered.getvalue()).decode()
-
-
+@api_retry
 def analyze_image(image_path, query):
+    """Analyze an image with Llama Vision via Together AI."""
     img_base64 = image_to_base64(image_path)
-    client = Together(api_key=os.getenv("TOGETHER_API_KEY"))
+    client = get_together_client()
     response = client.chat.completions.create(
         model="meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo",
         messages=[

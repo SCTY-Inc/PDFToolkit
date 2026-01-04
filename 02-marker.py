@@ -1,16 +1,18 @@
 from marker.converters.pdf import PdfConverter
 from marker.models import create_model_dict
 from marker.output import text_from_rendered
-from openai import OpenAI
-import base64
 import os
 from multiprocessing import freeze_support
 
+from pdftoolkit.clients import get_openai_client, api_retry
+from pdftoolkit.utils import image_to_base64_raw
 
+
+@api_retry
 def get_image_description(image_path):
-    client = OpenAI()
-    with open(image_path, "rb") as image_file:
-        encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+    """Get AI description of an image with retry logic."""
+    client = get_openai_client()
+    encoded_image = image_to_base64_raw(image_path)
 
     response = client.chat.completions.create(
         model="gpt-4o",
@@ -36,9 +38,24 @@ def process_images(images, output_dir):
     image_descriptions = {}
     print(f"Processing {len(images)} images...")
 
+    # Resolve output_dir to absolute path for security check
+    output_dir_abs = os.path.realpath(output_dir)
+
     for img_ref, img_data in images.items():
-        img_path = os.path.join(output_dir, img_ref)
-        os.makedirs(os.path.dirname(img_path), exist_ok=True)
+        # Sanitize: use only basename to prevent path traversal
+        safe_filename = os.path.basename(img_ref)
+        if not safe_filename:
+            print(f"Skipping invalid image ref: {img_ref}")
+            continue
+
+        img_path = os.path.join(output_dir, safe_filename)
+
+        # Verify resolved path is within output directory
+        if not os.path.realpath(img_path).startswith(output_dir_abs):
+            print(f"Skipping suspicious path: {img_ref}")
+            continue
+
+        os.makedirs(os.path.dirname(img_path) or ".", exist_ok=True)
 
         # Save image
         if isinstance(img_data, bytes):
@@ -47,10 +64,10 @@ def process_images(images, output_dir):
         else:  # PIL Image
             img_data.save(img_path, "JPEG")
 
-        # Get description
+        # Get description (store with original ref for markdown matching)
         description = get_image_description(img_path)
         image_descriptions[img_ref] = description
-        print(f"Processed {img_ref}")
+        print(f"Processed {safe_filename}")
 
     return image_descriptions
 
@@ -86,7 +103,7 @@ def enhance_markdown(text, image_descriptions):
 
 
 def main():
-    input_pdf = "docs/ACCENTURE_Luxury_2025.pdf"
+    input_pdf = "docs/verkada.pdf"
     output_dir = f"output/{os.path.splitext(os.path.basename(input_pdf))[0]}"
     os.makedirs(output_dir, exist_ok=True)
 

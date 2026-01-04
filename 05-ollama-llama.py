@@ -1,18 +1,16 @@
-import base64
 from pathlib import Path
-from ollama import Client
+
+from pdftoolkit.clients import get_ollama_client, api_retry
+from pdftoolkit.utils import image_to_base64_raw
 
 
-def image_to_base64(image_path):
-    with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode("utf-8")
-
-
+@api_retry
 def analyze_image(image_path, query):
-    client = Client(host="http://localhost:11434")
+    """Analyze an image with Llama Vision via local Ollama."""
+    client = get_ollama_client()
 
     # Convert image to base64
-    image_b64 = image_to_base64(image_path)
+    image_b64 = image_to_base64_raw(image_path)
 
     # Create message with image
     response = client.chat(

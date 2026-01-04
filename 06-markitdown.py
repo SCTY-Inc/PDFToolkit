@@ -1,8 +1,6 @@
 from markitdown import MarkItDown
 from openai import OpenAI
-import os
 from pathlib import Path
-from PIL import Image
 
 # Initialize OpenAI client and MarkItDown
 client = OpenAI()
@@ -20,16 +18,6 @@ def convert_pdf_with_descriptions(pdf_path):
     try:
         # Convert PDF and get result object
         result = md.convert(pdf_path)
-
-        # Debug: print result object attributes
-        print("\nResult object attributes:")
-        for attr in dir(result):
-            if not attr.startswith("_"):
-                print(f"- {attr}")
-                try:
-                    print(f"  Value: {getattr(result, attr)}")
-                except:
-                    print("  Unable to print value")
 
         # Generate output filename
         output_file = output_dir / f"{Path(pdf_path).stem}-Markitdown.md"

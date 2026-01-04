@@ -5,3 +5,5 @@ dist
 docs/*
 output/*
 .DS_Store
+.venv/
+.beads/

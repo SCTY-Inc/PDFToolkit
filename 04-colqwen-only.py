@@ -1,11 +1,12 @@
-import os
 import torch
 from pathlib import Path
 from PIL import Image
 from colpali_engine.models import ColQwen2, ColQwen2Processor
 
+from pdftoolkit.utils import get_device
+
 # Device setup
-device = "mps" if torch.backends.mps.is_available() else "cpu"
+device = get_device()
 print(f"Using device: {device}")
 
 # Load models

@@ -5,14 +5,19 @@ description = "A collection of Python tools for extracting and analyzing PDF con
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "byaldi>=0.0.8",
-    "docling>=2.15.0",
-    "langchain-openai>=0.2.16",
-    "marker-pdf>=1.1.0",
-    "markitdown>=0.0.1a3",
-    "megaparse>=0.0.46",
-    "ollama>=0.4.7",
-    "setuptools>=69.2.0",
-    "together>=1.3.10",
-    "unstructured[all-docs]>=0.11.8",
+    "byaldi>=0.0.7",
+    "docling>=2.66.0",
+    "marker-pdf>=1.10.0",
+    "markitdown[all]>=0.1.4",
+    "megaparse>=0.0.55",
+    "ollama>=0.6.0",
+    "tenacity>=8.2.0",
+    "together>=1.5.34",
+    "unstructured[all-docs]>=0.16.0",
 ]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0"]
+
+[project.scripts]
+pdftoolkit = "pdftoolkit.cli:main"

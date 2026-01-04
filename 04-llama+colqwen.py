@@ -1,14 +1,13 @@
-import os
 import torch
-import base64
 from pathlib import Path
 from PIL import Image
-from io import BytesIO
 from colpali_engine.models import ColQwen2, ColQwen2Processor
-from together import Together
+
+from pdftoolkit.clients import get_together_client, api_retry
+from pdftoolkit.utils import get_device, image_to_base64
 
 # Device setup
-device = "mps" if torch.backends.mps.is_available() else "cpu"
+device = get_device()
 print(f"Using device: {device}")
 
 # Load models
@@ -18,14 +17,9 @@ model = ColQwen2.from_pretrained(
 processor = ColQwen2Processor.from_pretrained("vidore/colqwen2-v0.1")
 
 
-def image_to_base64(image_path):
-    with Image.open(image_path) as img:
-        buffered = BytesIO()
-        img.save(buffered, format="JPEG")
-        return base64.b64encode(buffered.getvalue()).decode()
-
-
+@api_retry
 def analyze_image(image_path, query):
+    """Analyze image with ColQwen2 confidence check, then Llama if confident."""
     # Get confidence score for quantitative analysis
     image = Image.open(image_path)
     batch_images = processor.process_images([image]).to(model.device)
@@ -44,7 +38,7 @@ def analyze_image(image_path, query):
     # If high confidence, analyze details
     if confidence > 0.5:
         img_base64 = image_to_base64(image_path)
-        client = Together(api_key=os.getenv("TOGETHER_API_KEY"))
+        client = get_together_client()
         response = client.chat.completions.create(
             model="meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo",
             messages=[
