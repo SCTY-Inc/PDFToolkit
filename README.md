@@ -81,7 +81,7 @@ Optional tool installs (use a separate virtualenv if you already installed Docli
 ## 🛠️ Tools
 
 ### PDF to Markdown Converters
-- **01-docling.py** - Basic PDF to markdown converter
+- **src/01-docling.py** - Basic PDF to markdown converter
   ```python
   # Convert PDFs to basic markdown format
   from docling.document_converter import DocumentConverter
@@ -99,7 +99,7 @@ Optional tool installs (use a separate virtualenv if you already installed Docli
   # - Handles multiple pages
   ```
 
-- **02-marker.py** - PDF to enhanced markdown converter
+- **src/02-marker.py** - PDF to enhanced markdown converter
   ```python
   # Convert PDFs to markdown with AI image descriptions
   from marker.converters.pdf import PdfConverter
@@ -120,7 +120,7 @@ Optional tool installs (use a separate virtualenv if you already installed Docli
   ```
 
 ### Document Analysis
-- **03-megaparse.py** - Advanced document structure parser (install separately with `uv pip install megaparse unstructured[all-docs]==0.15.0`)
+- **src/03-megaparse.py** - Advanced document structure parser (install separately with `uv pip install megaparse unstructured[all-docs]==0.15.0`)
   ```python
   # Parse complex document structures with UnstructuredParser
   from megaparse import MegaParse
@@ -138,7 +138,7 @@ Optional tool installs (use a separate virtualenv if you already installed Docli
   # - Supports multiple formats
   ```
 
-- **06-markitdown.py** - Complete document processor
+- **src/06-markitdown.py** - Complete document processor
   ```python
   # All-in-one document processing solution
   from markitdown import MarkItDown
@@ -156,7 +156,7 @@ Optional tool installs (use a separate virtualenv if you already installed Docli
   # - Rich output options
   ```
 
-- **07-mistral.py** - Mistral OCR to markdown
+- **src/07-mistral.py** - Mistral OCR to markdown
   ```python
   # OCR a PDF with Mistral Document AI
   from mistralai import Mistral
@@ -175,7 +175,7 @@ Optional tool installs (use a separate virtualenv if you already installed Docli
   ```
 
 ### Chart Detection
-- **04-colqwen-only.py** - Visual similarity detector
+- **src/04-colqwen-only.py** - Visual similarity detector
   ```python
   # Detect and analyze visuals using similarity
   from colpali_engine.models import ColQwen2
@@ -193,7 +193,7 @@ Optional tool installs (use a separate virtualenv if you already installed Docli
   # - Batch processing support
   ```
 
-- **04-colqwen-search.py** - Chart detection system
+- **src/04-colqwen-search.py** - Chart detection system
   ```python
   # Scan and identify charts in PDFs
   from colpali_engine.models import ColQwen2
@@ -212,7 +212,7 @@ Optional tool installs (use a separate virtualenv if you already installed Docli
   ```
 
 ### Chart Analysis
-- **04-llama-only.py** - Direct chart analyzer (requires `uv pip install together`)
+- **src/04-llama-only.py** - Direct chart analyzer (requires `uv pip install together`)
   ```python
   # Analyze charts using Llama model
   from together import Together
@@ -230,7 +230,7 @@ Optional tool installs (use a separate virtualenv if you already installed Docli
   # - Detailed descriptions
   ```
 
-- **05-ollama-llama.py** - Local chart analyzer
+- **src/05-ollama-llama.py** - Local chart analyzer
   ```python
   # Local chart analysis with Llama
   from ollama import Client
@@ -249,7 +249,7 @@ Optional tool installs (use a separate virtualenv if you already installed Docli
   ```
 
 ### Combined Analysis
-- **04-llama+colqwen.py** - Combined visual analyzer (requires `uv pip install together`)
+- **src/04-llama+colqwen.py** - Combined visual analyzer (requires `uv pip install together`)
   ```python
   # Combine detection and analysis capabilities
   from colpali_engine.models import ColQwen2
