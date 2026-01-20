@@ -38,26 +38,45 @@ PDFToolkit is a collection of Python tools for extracting and analyzing PDF cont
 - PyTorch with MPS/CPU support
 - OpenAI API key (for GPT-4 vision)
 - Together API key (for Llama)
+- Mistral API key (for OCR)
 - Ollama (for local Llama)
 
 ## 🚀 Installation
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/pdftoolkit.git
+git clone https://github.com/amadad/pdftoolkit.git
 cd pdftoolkit
 ```
 
-2. Install dependencies
+2. Install uv (if not already installed)
 ```bash
-pip install -r requirements.txt
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-3. Set up environment variables
+3. Create virtual environment and install dependencies
+```bash
+uv venv
+source .venv/bin/activate  # On Unix/macOS
+# or
+.venv\Scripts\activate  # On Windows
+
+# Install core dependencies
+uv sync
+
+# Install development dependencies (if any)
+uv sync --extra dev
+```
+
+4. Set up environment variables
 ```bash
 cp .env.example .env
 # Edit .env with your API keys
 ```
+
+Optional tool installs (use a separate virtualenv if you already installed Docling):
+- MegaParse: `uv pip install megaparse unstructured[all-docs]==0.15.0`
+- Together (for 04-llama tools): `uv pip install together`
 
 ## 🛠️ Tools
 
@@ -101,7 +120,7 @@ cp .env.example .env
   ```
 
 ### Document Analysis
-- **03-megaparse.py** - Advanced document structure parser
+- **03-megaparse.py** - Advanced document structure parser (install separately with `uv pip install megaparse unstructured[all-docs]==0.15.0`)
   ```python
   # Parse complex document structures with UnstructuredParser
   from megaparse import MegaParse
@@ -135,6 +154,24 @@ cp .env.example .env
   # - Multiple model support
   # - Configurable pipeline
   # - Rich output options
+  ```
+
+- **07-mistral.py** - Mistral OCR to markdown
+  ```python
+  # OCR a PDF with Mistral Document AI
+  from mistralai import Mistral
+
+  # Process workflow:
+  # 1. Upload PDF to Mistral
+  # 2. Run OCR with mistral-ocr-latest
+  # 3. Combine page markdown
+  # 4. Save output file
+
+  # Features:
+  # - High-accuracy OCR
+  # - Markdown output
+  # - PDF support via file upload
+  # - API-based processing
   ```
 
 ### Chart Detection
@@ -175,7 +212,7 @@ cp .env.example .env
   ```
 
 ### Chart Analysis
-- **04-llama-only.py** - Direct chart analyzer
+- **04-llama-only.py** - Direct chart analyzer (requires `uv pip install together`)
   ```python
   # Analyze charts using Llama model
   from together import Together
@@ -212,7 +249,7 @@ cp .env.example .env
   ```
 
 ### Combined Analysis
-- **04-llama+colqwen.py** - Combined visual analyzer
+- **04-llama+colqwen.py** - Combined visual analyzer (requires `uv pip install together`)
   ```python
   # Combine detection and analysis capabilities
   from colpali_engine.models import ColQwen2
@@ -237,6 +274,7 @@ cp .env.example .env
 - [Marker](https://github.com/VikParuchuri/marker) - PDF extraction by [Vik Paruchuri](https://x.com/vikparuchuri)
 - [MegaParse](https://github.com/QuivrHQ/MegaParse) - Advanced parsing
 - [MarkItDown](https://github.com/microsoft/markitdown) - Microsoft's converter
+- [Mistral OCR](https://docs.mistral.ai/api/endpoint/ocr) - Mistral Document AI
 - [Ollama](https://ollama.ai/) - Local LLM inference
 - [Together](https://together.ai/) - Cloud LLM inference
 - [Unstructured](https://unstructured.io/) - Document parsing

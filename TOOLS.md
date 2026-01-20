@@ -15,6 +15,7 @@ Comprehensive evaluation of PDF extraction and document understanding tools.
 | **PaddleOCR** | Full Pipeline | Multilingual | ~1GB | No |
 | **olmOCR** | Academic | Papers, equations | ~2GB | Yes |
 | **Nanonets OCR2** | Enterprise | Forms, signatures | ~6GB | Yes |
+| **Mistral OCR** | Cloud OCR | Fast API OCR | SaaS | No |
 
 ## Detailed Tool Profiles
 
@@ -22,7 +23,7 @@ Comprehensive evaluation of PDF extraction and document understanding tools.
 
 #### Docling (IBM)
 ```bash
-pip install docling>=2.66.0
+uv pip install docling>=2.66.0
 ```
 - **Strengths**: Simple API, fast, good baseline
 - **Weaknesses**: Basic layout handling
@@ -30,7 +31,7 @@ pip install docling>=2.66.0
 
 #### Marker-PDF
 ```bash
-pip install marker-pdf>=1.10.0
+uv pip install marker-pdf>=1.10.0
 ```
 - **Strengths**: Layout preservation, image extraction
 - **Weaknesses**: Commercial license for >$2M revenue
@@ -38,7 +39,7 @@ pip install marker-pdf>=1.10.0
 
 #### MegaParse (Quivr)
 ```bash
-pip install megaparse>=0.0.55
+uv pip install megaparse unstructured[all-docs]==0.15.0
 ```
 - **Strengths**: Deep structural analysis
 - **Weaknesses**: Heavy dependencies (unstructured)
@@ -46,11 +47,19 @@ pip install megaparse>=0.0.55
 
 #### MarkItDown (Microsoft)
 ```bash
-pip install markitdown[all]>=0.1.4
+uv pip install markitdown[all]>=0.1.4
 ```
 - **Strengths**: LLM integration, plugin architecture
 - **Weaknesses**: Newer, less battle-tested
 - **Best for**: LLM preprocessing pipelines
+
+#### Mistral OCR (Mistral AI)
+```bash
+uv pip install mistralai
+```
+- **Strengths**: High-accuracy cloud OCR, markdown output, file upload support
+- **Weaknesses**: API key required, usage-based pricing
+- **Best for**: High-fidelity OCR with structured markdown
 
 ---
 
@@ -58,7 +67,7 @@ pip install markitdown[all]>=0.1.4
 
 #### MinerU (OpenDataLab)
 ```bash
-pip install magic-pdf[full]
+uv pip install magic-pdf[full]
 ```
 **DocVQA**: N/A | **Install**: ~3GB
 
@@ -84,7 +93,7 @@ md = pipe.pipe_mk_markdown("./images", drop_mode="none")
 
 #### GOT-OCR2.0 (StepFun)
 ```bash
-pip install transformers pdf2image
+uv pip install transformers pdf2image
 ```
 **Model**: `stepfun-ai/GOT-OCR-2.0-hf` (580M params)
 
@@ -107,7 +116,7 @@ text = processor.decode(output[0], skip_special_tokens=True)
 
 #### Qwen2.5-VL (Alibaba)
 ```bash
-pip install transformers torch accelerate
+uv pip install transformers torch accelerate
 ```
 **Model**: `Qwen/Qwen2.5-VL-7B-Instruct` | **DocVQA**: 96.4%
 
@@ -135,7 +144,7 @@ output = model.generate(**inputs, max_new_tokens=2048)
 
 #### InternVL2.5 (OpenGVLab)
 ```bash
-pip install transformers torch flash-attn
+uv pip install transformers torch flash-attn
 ```
 **Model**: `OpenGVLab/InternVL2_5-8B` | **DocVQA**: 95.1%
 
@@ -159,7 +168,7 @@ outputs = model.generate(
 
 #### PaddleOCR PP-StructureV3
 ```bash
-pip install paddleocr[doc-parser]
+uv pip install paddleocr[doc-parser]
 ```
 
 ```python
@@ -179,7 +188,7 @@ for res in output:
 
 #### olmOCR (Allen AI)
 ```bash
-pip install olmocr[gpu]
+uv pip install olmocr[gpu]
 ```
 
 ```bash
@@ -194,7 +203,7 @@ python -m olmocr.pipeline ./output --markdown --pdfs doc.pdf
 
 #### Nanonets-OCR2
 ```bash
-pip install transformers flash-attn
+uv pip install transformers flash-attn
 ```
 **Model**: `nanonets/Nanonets-OCR2-3B` | **DocVQA**: 85.15%
 

@@ -10,7 +10,7 @@ def eval_olmocr(input_path: Path, output_dir: Path) -> str:
 
     Install:
         conda create -n olmocr python=3.11
-        pip install olmocr[gpu] --extra-index-url https://download.pytorch.org/whl/cu128
+        uv pip install olmocr[gpu] --extra-index-url https://download.pytorch.org/whl/cu128
 
     Features:
     - Purpose-built for academic/technical docs
@@ -23,10 +23,13 @@ def eval_olmocr(input_path: Path, output_dir: Path) -> str:
 
     # olmOCR is primarily CLI-based
     cmd = [
-        "python", "-m", "olmocr.pipeline",
+        "python",
+        "-m",
+        "olmocr.pipeline",
         str(output_dir),
         "--markdown",
-        "--pdfs", str(input_path)
+        "--pdfs",
+        str(input_path),
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -44,6 +47,7 @@ def eval_olmocr(input_path: Path, output_dir: Path) -> str:
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
         print("Usage: python -m eval.tools.olmocr <pdf_file>")
         sys.exit(1)

@@ -7,7 +7,7 @@ def eval_paddleocr(input_path: Path, output_dir: Path) -> str:
     """
     Evaluate PaddleOCR PP-StructureV3.
 
-    Install: pip install paddleocr[doc-parser]
+    Install: uv pip install paddleocr[doc-parser]
 
     Features:
     - 7-module pipeline (layout, table, formula, reading order, chart, markdown, preprocessing)
@@ -25,7 +25,7 @@ def eval_paddleocr(input_path: Path, output_dir: Path) -> str:
     # Collect markdown from results
     md_parts = []
     for res in output:
-        if hasattr(res, 'save_to_markdown'):
+        if hasattr(res, "save_to_markdown"):
             temp_dir = output_dir / "_paddle_temp"
             temp_dir.mkdir(exist_ok=True)
             res.save_to_markdown(save_path=str(temp_dir))
@@ -39,6 +39,7 @@ def eval_paddleocr(input_path: Path, output_dir: Path) -> str:
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
         print("Usage: python -m eval.tools.paddleocr <pdf_file>")
         sys.exit(1)

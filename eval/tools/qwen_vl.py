@@ -7,7 +7,7 @@ def eval_qwen_vl(input_path: Path, output_dir: Path, model_size: str = "7B") -> 
     """
     Evaluate Qwen2.5-VL for document understanding.
 
-    Install: pip install transformers torch accelerate qwen-vl-utils
+    Install: uv pip install transformers torch accelerate qwen-vl-utils
 
     Features:
     - DocVQA score 96.4 (tops among VLMs)
@@ -27,7 +27,7 @@ def eval_qwen_vl(input_path: Path, output_dir: Path, model_size: str = "7B") -> 
         model_id,
         torch_dtype=torch.float16,
         device_map="auto",
-        attn_implementation="sdpa"
+        attn_implementation="sdpa",
     )
     processor = AutoProcessor.from_pretrained(model_id)
 
@@ -40,27 +40,31 @@ def eval_qwen_vl(input_path: Path, output_dir: Path, model_size: str = "7B") -> 
         temp_path = output_dir / f"_temp_page_{i}.png"
         img.save(temp_path)
 
-        messages = [{
-            "role": "user",
-            "content": [
-                {"type": "image", "image": str(temp_path)},
-                {"type": "text", "text": "Extract all text and describe any charts, tables, or figures. Output in markdown format."}
-            ]
-        }]
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image", "image": str(temp_path)},
+                    {
+                        "type": "text",
+                        "text": "Extract all text and describe any charts, tables, or figures. Output in markdown format.",
+                    },
+                ],
+            }
+        ]
 
         inputs = processor.apply_chat_template(
             messages,
             add_generation_prompt=True,
             tokenize=True,
             return_dict=True,
-            return_tensors="pt"
+            return_tensors="pt",
         ).to(model.device)
 
         generated_ids = model.generate(**inputs, max_new_tokens=2048)
-        generated_ids_trimmed = generated_ids[:, inputs.input_ids.shape[1]:]
+        generated_ids_trimmed = generated_ids[:, inputs.input_ids.shape[1] :]
         output_text = processor.batch_decode(
-            generated_ids_trimmed,
-            skip_special_tokens=True
+            generated_ids_trimmed, skip_special_tokens=True
         )[0]
 
         results.append(f"## Page {i + 1}\n\n{output_text}")
@@ -72,6 +76,7 @@ def eval_qwen_vl(input_path: Path, output_dir: Path, model_size: str = "7B") -> 
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
         print("Usage: python -m eval.tools.qwen_vl <pdf_file>")
         sys.exit(1)

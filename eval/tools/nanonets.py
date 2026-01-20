@@ -7,7 +7,7 @@ def eval_nanonets(input_path: Path, output_dir: Path) -> str:
     """
     Evaluate Nanonets-OCR2 for enterprise document extraction.
 
-    Install: pip install transformers flash-attn>=2.0.0
+    Install: uv pip install transformers flash-attn>=2.0.0
 
     Features:
     - Advanced element recognition (signatures, watermarks, checkboxes)
@@ -24,9 +24,7 @@ def eval_nanonets(input_path: Path, output_dir: Path) -> str:
     output_file = output_dir / f"{input_path.stem}-nanonets.md"
 
     model = AutoModelForImageTextToText.from_pretrained(
-        "nanonets/Nanonets-OCR2-3B",
-        torch_dtype=torch.bfloat16,
-        device_map="auto"
+        "nanonets/Nanonets-OCR2-3B", torch_dtype=torch.bfloat16, device_map="auto"
     )
     processor = AutoProcessor.from_pretrained("nanonets/Nanonets-OCR2-3B")
 
@@ -37,11 +35,7 @@ def eval_nanonets(input_path: Path, output_dir: Path) -> str:
     for i, img in enumerate(images):
         inputs = processor(images=img, return_tensors="pt").to(model.device)
 
-        generated_ids = model.generate(
-            **inputs,
-            max_new_tokens=4096,
-            do_sample=False
-        )
+        generated_ids = model.generate(**inputs, max_new_tokens=4096, do_sample=False)
 
         text = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
         results.append(f"## Page {i + 1}\n\n{text}")
@@ -52,6 +46,7 @@ def eval_nanonets(input_path: Path, output_dir: Path) -> str:
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
         print("Usage: python -m eval.tools.nanonets <pdf_file>")
         sys.exit(1)

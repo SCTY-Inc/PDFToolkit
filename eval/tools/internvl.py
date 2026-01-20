@@ -7,7 +7,7 @@ def eval_internvl(input_path: Path, output_dir: Path, model_size: str = "8B") ->
     """
     Evaluate InternVL2.5 for document understanding.
 
-    Install: pip install transformers torch flash-attn
+    Install: uv pip install transformers torch flash-attn
 
     Features:
     - DocVQA 95.1%, InfoVQA 84.1%
@@ -24,12 +24,16 @@ def eval_internvl(input_path: Path, output_dir: Path, model_size: str = "8B") ->
     model_id = f"OpenGVLab/InternVL2_5-{model_size}"
 
     tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
-    model = AutoModel.from_pretrained(
-        model_id,
-        torch_dtype=torch.bfloat16,
-        low_cpu_mem_usage=True,
-        trust_remote_code=True
-    ).eval().cuda()
+    model = (
+        AutoModel.from_pretrained(
+            model_id,
+            torch_dtype=torch.bfloat16,
+            low_cpu_mem_usage=True,
+            trust_remote_code=True,
+        )
+        .eval()
+        .cuda()
+    )
 
     # Convert PDF to images
     images = convert_from_path(str(input_path))
@@ -40,10 +44,10 @@ def eval_internvl(input_path: Path, output_dir: Path, model_size: str = "8B") ->
 
         with torch.no_grad():
             outputs = model.generate(
-                tokenizer.encode(prompt, return_tensors='pt').to(model.device),
+                tokenizer.encode(prompt, return_tensors="pt").to(model.device),
                 max_new_tokens=2048,
                 do_sample=False,
-                images=[img]
+                images=[img],
             )
 
         response = tokenizer.decode(outputs[0], skip_special_tokens=True)
@@ -55,6 +59,7 @@ def eval_internvl(input_path: Path, output_dir: Path, model_size: str = "8B") ->
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
         print("Usage: python -m eval.tools.internvl <pdf_file>")
         sys.exit(1)

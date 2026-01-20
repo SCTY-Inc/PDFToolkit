@@ -19,6 +19,7 @@ from typing import Callable
 @dataclass
 class EvalResult:
     """Result of running a single tool on a document."""
+
     tool: str
     input_file: str
     output_file: str | None
@@ -29,7 +30,9 @@ class EvalResult:
     metadata: dict
 
 
-def run_tool(name: str, func: Callable, input_path: Path, output_dir: Path) -> EvalResult:
+def run_tool(
+    name: str, func: Callable, input_path: Path, output_dir: Path
+) -> EvalResult:
     """Run a tool and capture metrics."""
     start = time.time()
     output_file = None
@@ -107,7 +110,7 @@ def eval_mineru(input_path: Path, output_dir: Path) -> str:
         output_file.write_text(md_content, encoding="utf-8")
         return str(output_file)
     except ImportError:
-        raise ImportError("MinerU not installed. Run: pip install magic-pdf")
+        raise ImportError("MinerU not installed. Run: uv pip install magic-pdf")
 
 
 def eval_got_ocr(input_path: Path, output_dir: Path) -> str:
@@ -129,6 +132,7 @@ def eval_got_ocr(input_path: Path, output_dir: Path) -> str:
 
         # Convert PDF pages to images first
         from pdf2image import convert_from_path
+
         images = convert_from_path(str(input_path))
 
         results = []
@@ -142,7 +146,9 @@ def eval_got_ocr(input_path: Path, output_dir: Path) -> str:
         output_file.write_text("\n\n".join(results), encoding="utf-8")
         return str(output_file)
     except ImportError:
-        raise ImportError("GOT-OCR2.0 not installed. Run: pip install transformers pdf2image")
+        raise ImportError(
+            "GOT-OCR2.0 not installed. Run: uv pip install transformers pdf2image"
+        )
 
 
 def eval_paddleocr(input_path: Path, output_dir: Path) -> str:
@@ -169,7 +175,9 @@ def eval_paddleocr(input_path: Path, output_dir: Path) -> str:
         output_file.write_text("\n\n".join(md_lines), encoding="utf-8")
         return str(output_file)
     except ImportError:
-        raise ImportError("PaddleOCR not installed. Run: pip install paddleocr paddlepaddle")
+        raise ImportError(
+            "PaddleOCR not installed. Run: uv pip install paddleocr paddlepaddle"
+        )
 
 
 # Registry of available tools
@@ -185,10 +193,18 @@ TOOLS = {
 def main():
     parser = argparse.ArgumentParser(description="Evaluate PDF extraction tools")
     parser.add_argument("input", help="Input PDF file")
-    parser.add_argument("-o", "--output", default="output/eval", help="Output directory")
-    parser.add_argument("-t", "--tool", choices=list(TOOLS.keys()), help="Specific tool to run")
+    parser.add_argument(
+        "-o", "--output", default="output/eval", help="Output directory"
+    )
+    parser.add_argument(
+        "-t", "--tool", choices=list(TOOLS.keys()), help="Specific tool to run"
+    )
     parser.add_argument("--all", action="store_true", help="Run all tools")
-    parser.add_argument("--baseline", action="store_true", help="Run baseline tools only (docling, marker)")
+    parser.add_argument(
+        "--baseline",
+        action="store_true",
+        help="Run baseline tools only (docling, marker)",
+    )
     args = parser.parse_args()
 
     input_path = Path(args.input)

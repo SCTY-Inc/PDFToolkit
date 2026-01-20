@@ -7,7 +7,7 @@ def eval_mineru(input_path: Path, output_dir: Path) -> str:
     """
     Evaluate MinerU for PDF to Markdown conversion.
 
-    Install: pip install magic-pdf[full]
+    Install: uv pip install magic-pdf[full]
 
     Features:
     - Removes headers/footers/page numbers
@@ -39,6 +39,7 @@ def eval_mineru(input_path: Path, output_dir: Path) -> str:
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
         print("Usage: python -m eval.tools.mineru <pdf_file>")
         sys.exit(1)

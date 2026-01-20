@@ -7,7 +7,7 @@ def eval_got_ocr(input_path: Path, output_dir: Path, use_format: bool = True) ->
     """
     Evaluate GOT-OCR2.0 for document OCR.
 
-    Install: pip install transformers pdf2image
+    Install: uv pip install transformers pdf2image
 
     Features:
     - Unified OCR for text, math, tables, charts
@@ -21,7 +21,11 @@ def eval_got_ocr(input_path: Path, output_dir: Path, use_format: bool = True) ->
 
     output_file = output_dir / f"{input_path.stem}-got-ocr.md"
 
-    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+    device = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps" if torch.backends.mps.is_available() else "cpu"
+    )
 
     model = AutoModelForImageTextToText.from_pretrained(
         "stepfun-ai/GOT-OCR-2.0-hf",
@@ -46,8 +50,7 @@ def eval_got_ocr(input_path: Path, output_dir: Path, use_format: bool = True) ->
         )
 
         text = processor.decode(
-            generate_ids[0, inputs["input_ids"].shape[1]:],
-            skip_special_tokens=True
+            generate_ids[0, inputs["input_ids"].shape[1] :], skip_special_tokens=True
         )
         results.append(f"## Page {i + 1}\n\n{text}")
 
@@ -57,6 +60,7 @@ def eval_got_ocr(input_path: Path, output_dir: Path, use_format: bool = True) ->
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
         print("Usage: python -m eval.tools.got_ocr <pdf_file>")
         sys.exit(1)
