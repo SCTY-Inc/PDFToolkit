@@ -12,10 +12,11 @@ dependencies = [
     "mistralai>=1.0.0",
     "ollama>=0.6.0",
     "tenacity>=8.2.0",
+    "typer>=0.15.0",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0.0", "pre-commit>=4.5.0"]
 
 [project.scripts]
-pdftoolkit = "pdftoolkit.cli:main"
+pdftoolkit = "pdftoolkit.cli:app"

@@ -1,183 +1,132 @@
-"""CLI interface for PDFToolkit."""
+"""CLI interface for PDFToolkit using Typer."""
 
-import argparse
-import sys
+from enum import Enum
 from pathlib import Path
 
+import typer
+from rich import print as rprint
 
-def cmd_docling(args):
-    """Convert PDF to markdown using Docling."""
-    from docling.document_converter import DocumentConverter
-
-    output_dir = Path(args.output or "output")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    output_filename = Path(args.input).stem + ".md"
-    output_path = output_dir / output_filename
-
-    converter = DocumentConverter()
-    result = converter.convert(args.input)
-
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(result.document.export_to_markdown())
-
-    print(f"Saved: {output_path}")
+app = typer.Typer(
+    help="PDF extraction and analysis toolkit",
+    no_args_is_help=True,
+)
 
 
-def cmd_marker(args):
-    """Convert PDF to markdown with AI image descriptions using Marker."""
-    import os
-    from multiprocessing import freeze_support
+class ConvertProvider(str, Enum):
+    """Available PDF conversion providers."""
+    docling = "docling"
+    marker = "marker"
+    megaparse = "megaparse"
+    markitdown = "markitdown"
+    mistral = "mistral"
 
-    from marker.converters.pdf import PdfConverter
-    from marker.models import create_model_dict
-    from marker.output import text_from_rendered
 
-    from pdftoolkit.clients import get_openai_client, api_retry
-    from pdftoolkit.utils import image_to_base64_raw
+class AnalyzeProvider(str, Enum):
+    """Available image analysis providers."""
+    ollama = "ollama"
+    together = "together"
+    colqwen = "colqwen"
 
-    freeze_support()
 
-    output_dir = Path(args.output or f"output/{Path(args.input).stem}")
-    output_dir.mkdir(parents=True, exist_ok=True)
+@app.command()
+def convert(
+    input_path: Path = typer.Argument(..., help="Input PDF file"),
+    provider: ConvertProvider = typer.Option(ConvertProvider.docling, "-p", "--provider", help="Conversion provider"),
+    output: Path = typer.Option(Path("output"), "-o", "--output", help="Output directory"),
+    describe: bool = typer.Option(False, "--describe", help="Add AI image descriptions (marker only)"),
+) -> None:
+    """Convert PDF to markdown."""
+    if not input_path.exists():
+        rprint(f"[red]Error:[/red] File not found: {input_path}")
+        raise typer.Exit(1)
 
-    @api_retry
-    def get_image_description(image_path):
-        client = get_openai_client()
-        encoded_image = image_to_base64_raw(image_path)
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "Describe this image in detail"},
-                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}},
-                ],
-            }],
-            max_tokens=300,
-        )
-        return response.choices[0].message.content
+    if not input_path.suffix.lower() == ".pdf":
+        rprint(f"[yellow]Warning:[/yellow] Input file may not be a PDF: {input_path}")
 
-    # Convert PDF
-    converter = PdfConverter(
-        artifact_dict=create_model_dict(),
-        config={"output_dir": str(output_dir)}
+    from pdftoolkit.providers import (
+        convert_docling,
+        convert_marker,
+        convert_megaparse,
+        convert_markitdown,
+        convert_mistral,
     )
-    rendered = converter(args.input)
-    text, metadata, images = text_from_rendered(rendered)
 
-    # Process images
-    output_dir_abs = output_dir.resolve()
-    image_descriptions = {}
+    rprint(f"Converting [cyan]{input_path}[/cyan] with [green]{provider.value}[/green]...")
 
-    for img_ref, img_data in images.items():
-        safe_filename = os.path.basename(img_ref)
-        if not safe_filename:
-            continue
+    match provider:
+        case ConvertProvider.docling:
+            output_path = convert_docling(input_path, output)
+        case ConvertProvider.marker:
+            output_path = convert_marker(input_path, output, describe=describe)
+        case ConvertProvider.megaparse:
+            output_path = convert_megaparse(input_path, output)
+        case ConvertProvider.markitdown:
+            output_path = convert_markitdown(input_path, output)
+        case ConvertProvider.mistral:
+            output_path = convert_mistral(input_path, output)
 
-        img_path = output_dir / safe_filename
-        if not img_path.resolve().is_relative_to(output_dir_abs):
-            continue
-
-        if isinstance(img_data, bytes):
-            img_path.write_bytes(img_data)
-        else:
-            img_data.save(img_path, "JPEG")
-
-        if not args.no_describe:
-            description = get_image_description(img_path)
-            image_descriptions[img_ref] = description
-            print(f"Processed: {safe_filename}")
-
-    # Enhance markdown
-    enhanced_text = text
-    for img_ref, description in image_descriptions.items():
-        for marker in [f"![]({img_ref})", f"![{img_ref}]({img_ref})"]:
-            if marker in enhanced_text:
-                enhanced_text = enhanced_text.replace(
-                    marker, f"{marker}\n\n*Image Description:* {description}\n"
-                )
-                break
-
-    # Save
-    output_file = output_dir / "enhanced_output.md"
-    output_file.write_text(enhanced_text, encoding="utf-8")
-    print(f"Saved: {output_file}")
+    rprint(f"[green]Saved:[/green] {output_path}")
 
 
-def cmd_megaparse(args):
-    """Parse PDF using MegaParse."""
-    from megaparse import MegaParse
-    from megaparse.parser.unstructured_parser import UnstructuredParser
+@app.command()
+def analyze(
+    input_path: Path = typer.Argument(..., help="Input image file or directory"),
+    provider: AnalyzeProvider = typer.Option(AnalyzeProvider.ollama, "-p", "--provider", help="Analysis provider"),
+    query: str = typer.Option("Describe this visualization", "-q", "--query", help="Analysis query/prompt"),
+    threshold: float = typer.Option(0.5, "--threshold", help="Confidence threshold for chart detection"),
+) -> None:
+    """Analyze images/charts with vision models."""
+    if not input_path.exists():
+        rprint(f"[red]Error:[/red] Path not found: {input_path}")
+        raise typer.Exit(1)
 
-    output_dir = Path(args.output or "output")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    output_filename = Path(args.input).stem + "-megaparse.md"
-    output_path = output_dir / output_filename
-
-    parser = UnstructuredParser()
-    megaparse = MegaParse(parser)
-    megaparse.load(args.input)
-    megaparse.save(str(output_path))
-
-    print(f"Saved: {output_path}")
-
-
-def cmd_markitdown(args):
-    """Convert PDF using MarkItDown."""
-    from markitdown import MarkItDown
-    from openai import OpenAI
-
-    output_dir = Path(args.output or "output")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    output_filename = Path(args.input).stem + "-markitdown.md"
-    output_path = output_dir / output_filename
-
-    client = OpenAI()
-    md = MarkItDown(llm_client=client, llm_model="gpt-4")
-    result = md.convert(args.input)
-
-    output_path.write_text(result.text_content, encoding="utf-8")
-    print(f"Saved: {output_path}")
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        prog="pdftoolkit",
-        description="PDF extraction and analysis toolkit",
+    from pdftoolkit.providers import (
+        analyze_ollama,
+        analyze_together,
+        analyze_colqwen,
     )
-    subparsers = parser.add_subparsers(dest="command", required=True)
 
-    # Docling
-    p_docling = subparsers.add_parser("docling", help="Basic PDF to markdown")
-    p_docling.add_argument("input", help="Input PDF file")
-    p_docling.add_argument("-o", "--output", help="Output directory")
-    p_docling.set_defaults(func=cmd_docling)
+    # Collect files to process
+    if input_path.is_dir():
+        files = list(input_path.glob("*.jpg")) + list(input_path.glob("*.jpeg")) + list(input_path.glob("*.png"))
+        if not files:
+            rprint(f"[yellow]No image files found in:[/yellow] {input_path}")
+            raise typer.Exit(1)
+    else:
+        files = [input_path]
 
-    # Marker
-    p_marker = subparsers.add_parser("marker", help="PDF to markdown with AI image descriptions")
-    p_marker.add_argument("input", help="Input PDF file")
-    p_marker.add_argument("-o", "--output", help="Output directory")
-    p_marker.add_argument("--no-describe", action="store_true", help="Skip image descriptions")
-    p_marker.set_defaults(func=cmd_marker)
+    for file_path in files:
+        rprint(f"\nAnalyzing [cyan]{file_path}[/cyan] with [green]{provider.value}[/green]...")
 
-    # MegaParse
-    p_mega = subparsers.add_parser("megaparse", help="Advanced document structure parsing")
-    p_mega.add_argument("input", help="Input PDF file")
-    p_mega.add_argument("-o", "--output", help="Output directory")
-    p_mega.set_defaults(func=cmd_megaparse)
+        match provider:
+            case AnalyzeProvider.ollama:
+                result = analyze_ollama(file_path, query)
+                rprint(f"[bold]Result:[/bold]\n{result}")
 
-    # MarkItDown
-    p_mit = subparsers.add_parser("markitdown", help="Microsoft MarkItDown conversion")
-    p_mit.add_argument("input", help="Input PDF file")
-    p_mit.add_argument("-o", "--output", help="Output directory")
-    p_mit.set_defaults(func=cmd_markitdown)
+            case AnalyzeProvider.together:
+                result = analyze_together(file_path, query, threshold=threshold)
+                rprint(f"[bold]Result:[/bold]\n{result}")
 
-    args = parser.parse_args()
-    args.func(args)
+            case AnalyzeProvider.colqwen:
+                # ColQwen uses multiple queries for relevance scoring
+                default_queries = [
+                    "chart showing numeric trends",
+                    "graph with multiple data points",
+                    "statistical visualization",
+                    "data showing growth over time",
+                    "comparison between different values",
+                    "percentage or ratio data",
+                ]
+                queries = [query] if query != "Describe this visualization" else default_queries
+                results = analyze_colqwen(file_path, queries, threshold=threshold)
+
+                if results:
+                    rprint("[bold]Relevant content found:[/bold]")
+                    for q, score in results:
+                        rprint(f"  [green]{score:.3f}[/green] {q}")
+                else:
+                    rprint(f"[yellow]No matches above threshold ({threshold})[/yellow]")
 
 
 if __name__ == "__main__":
-    main()
+    app()

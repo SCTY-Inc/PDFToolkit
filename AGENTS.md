@@ -1,31 +1,32 @@
-# Agent Instructions
+# Agent Rules
 
-## Defaults
+- `trash` not rm; `uv` for Python
+- Session end: gates pass → commit → `git push` (mandatory)
 
-- Use `trash` instead of `rm`
-- Prefer `uv` for Python environment and installs
+---
 
-## Landing the Plane (Session Completion)
+# Providers
 
-**When ending a work session**, complete ALL steps below. Work is NOT complete until `git push` succeeds.
+## Convert (`pdftoolkit/providers/convert.py`)
 
-**MANDATORY WORKFLOW:**
+| Provider | Key | Output |
+|----------|-----|--------|
+| docling (default) | - | `{stem}.md` |
+| marker | OPENAI (--describe) | `{stem}/output.md` |
+| mistral | MISTRAL | `{stem}-mistral.md` |
+| markitdown | OPENAI | `{stem}-markitdown.md` |
+| megaparse | - | `{stem}-megaparse.md` |
 
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   git push
-   git status  # MUST show "up to date with origin"
-   ```
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
+## Analyze (`pdftoolkit/providers/analyze.py`)
 
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
+| Provider | Requirement |
+|----------|-------------|
+| ollama (default) | local Ollama |
+| together | TOGETHER key |
+| colqwen | local GPU |
+
+## Extend
+
+1. Add fn to `providers/{convert,analyze}.py`
+2. Export in `providers/__init__.py`
+3. Add enum + match in `cli.py`

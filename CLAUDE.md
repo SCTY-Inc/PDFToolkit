@@ -1,31 +1,29 @@
 # CLAUDE.md
 
-Project guidance for PDFToolkit.
-
-## Setup
-
-- Python: 3.11 (see `.python-version`)
-- Package manager: `uv`
-
-Common commands:
+Python 3.11 / uv
 
 ```bash
-uv venv
-source .venv/bin/activate
-uv sync
-uv sync --extra dev
+uv sync && uv run pytest
 ```
 
-## Tests
-
-Run tests with:
+## CLI
 
 ```bash
-uv run pytest
+pdftoolkit convert file.pdf [-p docling|marker|mistral|markitdown|megaparse] [-o dir] [--describe]
+pdftoolkit analyze image.jpg [-p ollama|together|colqwen] [-q "query"] [--threshold 0.5]
+```
+
+## Structure
+
+```
+pdftoolkit/cli.py          # Typer entry
+pdftoolkit/providers/      # convert.py, analyze.py
+pdftoolkit/clients.py      # API singletons
+src/                       # Reference scripts
 ```
 
 ## Notes
 
-- Use `trash` instead of `rm`
-- Some tools (MegaParse, Together) are optional and installed separately
-- OCR outputs are written to `output/`
+- `trash` not rm
+- API keys: OPENAI, MISTRAL, TOGETHER
+- Outputs: `output/`
