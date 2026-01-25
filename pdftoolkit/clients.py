@@ -6,11 +6,11 @@ from functools import lru_cache
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 
-# Retry decorator for API calls
+# Retry decorator for API calls - retry on network/API errors only
 api_retry = retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=2, max=10),
-    retry=retry_if_exception_type((Exception,)),
+    retry=retry_if_exception_type((ConnectionError, TimeoutError, OSError)),
     reraise=True,
 )
 

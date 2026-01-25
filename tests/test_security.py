@@ -1,6 +1,5 @@
 """Security regression tests for PDFToolkit."""
 
-import os
 import tempfile
 from pathlib import Path
 
@@ -46,15 +45,17 @@ class TestPathTraversal:
     def test_with_real_tempdir(self):
         """Integration test with real temp directory."""
         with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_resolved = Path(tmpdir).resolve()
+
             # This should work
             result = safe_output_path(tmpdir, "test.jpg")
             assert result is not None
-            assert str(result).startswith(tmpdir)
+            assert result.is_relative_to(tmpdir_resolved)
 
             # This should be sanitized
             result = safe_output_path(tmpdir, "../../../etc/passwd")
             assert result is not None
-            assert str(result).startswith(tmpdir)
+            assert result.is_relative_to(tmpdir_resolved)
             assert result.name == "passwd"
 
             # This should fail

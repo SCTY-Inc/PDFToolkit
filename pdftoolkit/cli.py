@@ -28,6 +28,20 @@ class AnalyzeProvider(str, Enum):
     colqwen = "colqwen"
 
 
+# Default queries for ColQwen relevance scoring
+COLQWEN_DEFAULT_QUERIES = [
+    "chart showing numeric trends",
+    "graph with multiple data points",
+    "statistical visualization",
+    "data showing growth over time",
+    "comparison between different values",
+    "percentage or ratio data",
+]
+
+# Supported image extensions (lowercase)
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
+
+
 @app.command()
 def convert(
     input_path: Path = typer.Argument(..., help="Input PDF file"),
@@ -86,9 +100,9 @@ def analyze(
         analyze_colqwen,
     )
 
-    # Collect files to process
+    # Collect files to process (case-insensitive extension matching)
     if input_path.is_dir():
-        files = list(input_path.glob("*.jpg")) + list(input_path.glob("*.jpeg")) + list(input_path.glob("*.png"))
+        files = [f for f in input_path.iterdir() if f.suffix.lower() in IMAGE_EXTENSIONS]
         if not files:
             rprint(f"[yellow]No image files found in:[/yellow] {input_path}")
             raise typer.Exit(1)
@@ -109,15 +123,7 @@ def analyze(
 
             case AnalyzeProvider.colqwen:
                 # ColQwen uses multiple queries for relevance scoring
-                default_queries = [
-                    "chart showing numeric trends",
-                    "graph with multiple data points",
-                    "statistical visualization",
-                    "data showing growth over time",
-                    "comparison between different values",
-                    "percentage or ratio data",
-                ]
-                queries = [query] if query != "Describe this visualization" else default_queries
+                queries = [query] if query != "Describe this visualization" else COLQWEN_DEFAULT_QUERIES
                 results = analyze_colqwen(file_path, queries, threshold=threshold)
 
                 if results:

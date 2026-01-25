@@ -23,7 +23,7 @@ class TestApiRetry:
         assert call_count == 1
 
     def test_retries_on_failure(self):
-        """Function that fails then succeeds should retry."""
+        """Function that fails then succeeds should retry on network errors."""
         call_count = 0
 
         @api_retry
@@ -31,7 +31,7 @@ class TestApiRetry:
             nonlocal call_count
             call_count += 1
             if call_count < 3:
-                raise Exception("temporary failure")
+                raise ConnectionError("temporary failure")
             return "success"
 
         result = fails_twice_then_succeeds()
@@ -46,9 +46,24 @@ class TestApiRetry:
         def always_fails():
             nonlocal call_count
             call_count += 1
-            raise Exception("permanent failure")
+            raise TimeoutError("permanent failure")
 
-        with pytest.raises(Exception, match="permanent failure"):
+        with pytest.raises(TimeoutError, match="permanent failure"):
             always_fails()
 
         assert call_count == 3  # Should have tried 3 times
+
+    def test_no_retry_on_value_error(self):
+        """Non-network errors should not be retried."""
+        call_count = 0
+
+        @api_retry
+        def raises_value_error():
+            nonlocal call_count
+            call_count += 1
+            raise ValueError("bad input")
+
+        with pytest.raises(ValueError, match="bad input"):
+            raises_value_error()
+
+        assert call_count == 1  # Should not retry

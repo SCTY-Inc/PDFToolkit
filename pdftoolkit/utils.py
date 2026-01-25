@@ -1,9 +1,8 @@
 """Shared utilities for PDFToolkit."""
 
 import base64
-import os
 from io import BytesIO
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import torch
 from PIL import Image
@@ -39,14 +38,15 @@ def safe_output_path(output_dir: str | Path, filename: str) -> Path | None:
     Returns None if the path would escape the output directory.
     """
     output_dir = Path(output_dir).resolve()
-    safe_filename = os.path.basename(filename)
+    # Extract just the filename, handling both Unix and Windows paths
+    safe_filename = PurePosixPath(filename).name
 
     if not safe_filename:
         return None
 
     full_path = (output_dir / safe_filename).resolve()
 
-    if not str(full_path).startswith(str(output_dir)):
+    if not full_path.is_relative_to(output_dir):
         return None
 
     return full_path

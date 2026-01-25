@@ -60,7 +60,6 @@ def convert_marker(input_path: Path, output_dir: Path, describe: bool = False) -
     text, metadata, images = text_from_rendered(rendered)
 
     # Process images
-    output_dir_abs = output_dir.resolve()
     image_descriptions = {}
 
     for img_ref, img_data in images.items():
@@ -112,13 +111,11 @@ def convert_megaparse(input_path: Path, output_dir: Path) -> Path:
 def convert_markitdown(input_path: Path, output_dir: Path) -> Path:
     """Convert PDF using MarkItDown."""
     from markitdown import MarkItDown
-    from openai import OpenAI
 
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"{input_path.stem}-markitdown.md"
 
-    client = OpenAI()
-    md = MarkItDown(llm_client=client, llm_model="gpt-4")
+    md = MarkItDown(llm_client=get_openai_client(), llm_model="gpt-4")
     result = md.convert(str(input_path))
 
     output_path.write_text(result.text_content, encoding="utf-8")
