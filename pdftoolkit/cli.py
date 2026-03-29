@@ -6,8 +6,15 @@ from pathlib import Path
 import typer
 from rich import print as rprint
 
+from pdftoolkit.benchmark import (
+    get_default_benchmark_tools,
+    get_tool_registry,
+    run_benchmark,
+    save_results,
+)
+
 app = typer.Typer(
-    help="PDF extraction and analysis toolkit",
+    help="PDF extraction, analysis, and benchmarking toolkit",
     no_args_is_help=True,
 )
 
@@ -40,6 +47,8 @@ COLQWEN_DEFAULT_QUERIES = [
 
 # Supported image extensions (lowercase)
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
+
+BENCHMARK_TOOL_NAMES = ", ".join(get_tool_registry())
 
 
 @app.command()
@@ -132,6 +141,65 @@ def analyze(
                         rprint(f"  [green]{score:.3f}[/green] {q}")
                 else:
                     rprint(f"[yellow]No matches above threshold ({threshold})[/yellow]")
+
+
+@app.command()
+def benchmark(
+    input_path: Path = typer.Argument(..., help="Input PDF file"),
+    tool: list[str] | None = typer.Option(
+        None,
+        "-t",
+        "--tool",
+        help=f"Benchmark tool to run. Repeat for multiple tools. Available: {BENCHMARK_TOOL_NAMES}",
+    ),
+    output: Path = typer.Option(Path("output/benchmark"), "-o", "--output", help="Benchmark output directory"),
+) -> None:
+    """Benchmark one PDF across multiple extraction tools."""
+    if not input_path.exists():
+        rprint(f"[red]Error:[/red] File not found: {input_path}")
+        raise typer.Exit(1)
+
+    if input_path.suffix.lower() != ".pdf":
+        rprint(f"[yellow]Warning:[/yellow] Input file may not be a PDF: {input_path}")
+
+    registry = get_tool_registry()
+    selected_tools = tool or get_default_benchmark_tools()
+    selected_tools = list(dict.fromkeys(selected_tools))
+
+    unknown_tools = [name for name in selected_tools if name not in registry]
+    if unknown_tools:
+        rprint(f"[red]Error:[/red] Unknown benchmark tool(s): {', '.join(unknown_tools)}")
+        raise typer.Exit(1)
+
+    run_dir = output / input_path.stem
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    rprint(f"Benchmarking [cyan]{input_path}[/cyan] with: [green]{', '.join(selected_tools)}[/green]")
+    results = run_benchmark(input_path=input_path, output_dir=run_dir, tool_names=selected_tools, registry=registry)
+
+    results_path = run_dir / "results.json"
+    save_results(results, results_path)
+
+    rprint("\n[bold]Summary:[/bold]")
+    for result in results:
+        status = "OK" if result.success else "FAIL"
+        size = f"{result.output_size_bytes:,} bytes" if result.success else "-"
+        commercial = result.commercial_use.upper()
+        if result.success:
+            rprint(
+                f"  [green]{result.tool}[/green] [{commercial}] {status} "
+                f"({result.time_seconds:.2f}s, {size})"
+            )
+        else:
+            rprint(
+                f"  [red]{result.tool}[/red] [{commercial}] {status} "
+                f"({result.time_seconds:.2f}s) - {result.error}"
+            )
+
+    rprint(f"\n[green]Results saved:[/green] {results_path}")
+
+    if not any(result.success for result in results):
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":

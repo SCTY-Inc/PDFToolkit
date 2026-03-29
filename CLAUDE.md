@@ -10,6 +10,7 @@ uv sync && uv run pytest
 
 ```bash
 pdftoolkit convert file.pdf [-p docling|marker|mistral|markitdown|megaparse] [-o dir] [--describe]
+pdftoolkit benchmark file.pdf [-t tool ...] [-o dir]
 pdftoolkit analyze image.jpg [-p ollama|together|colqwen] [-q "query"] [--threshold 0.5]
 ```
 
@@ -17,6 +18,7 @@ pdftoolkit analyze image.jpg [-p ollama|together|colqwen] [-q "query"] [--thresh
 
 ```
 pdftoolkit/cli.py          # Typer entry
+pdftoolkit/benchmark.py    # Benchmark harness + registry
 pdftoolkit/providers/      # convert.py, analyze.py
 pdftoolkit/clients.py      # API singletons
 src/                       # Reference scripts

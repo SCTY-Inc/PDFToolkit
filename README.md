@@ -21,7 +21,7 @@
 
 ## Overview
 
-PDFToolkit is a CLI for extracting and analyzing PDF content, with a focus on charts and visualizations. It provides a unified interface to multiple conversion and analysis backends.
+PDFToolkit is a CLI for extracting, analyzing, and benchmarking PDF content, with a focus on charts and visualizations. It provides a unified interface to multiple conversion and analysis backends, plus a harness for comparing parsers on a single document.
 
 ## Installation
 
@@ -69,6 +69,21 @@ pdftoolkit convert document.pdf -p marker --describe  # Add AI image description
 pdftoolkit convert document.pdf -o custom_output/     # Custom output directory
 ```
 
+### Benchmark a PDF Across Parsers
+
+```bash
+# Benchmark the integrated providers on one PDF
+pdftoolkit benchmark document.pdf
+
+# Benchmark a commercial-friendly subset
+pdftoolkit benchmark document.pdf -t docling -t markitdown -t mistral
+
+# Benchmark optional research tools (if installed)
+pdftoolkit benchmark document.pdf -t mineru -t olmocr -t paddleocr
+```
+
+Outputs are written under `output/benchmark/<document-stem>/`, with a `results.json` summary and per-tool output directories.
+
 ### Analyze Images/Charts
 
 ```bash
@@ -108,6 +123,22 @@ pdftoolkit analyze --help
 | `markitdown` | Microsoft's converter | OPENAI_API_KEY |
 | `megaparse` | Advanced structure parsing | Separate install |
 
+### Benchmark Tools
+
+`pdftoolkit benchmark` can run the integrated convert providers plus optional eval tools when installed.
+
+| Tool | What it is | Commercial use |
+|------|-------------|----------------|
+| `docling` | IBM document parser | Yes |
+| `markitdown` | Microsoft converter | Yes |
+| `mistral` | Mistral OCR API | Yes |
+| `megaparse` | Structural parser | Yes |
+| `marker` | Layout-focused parser | Review license/weights |
+| `paddleocr` | PP-Structure parser | Yes |
+| `olmocr` | Technical-doc OCR | Yes |
+| `mineru` | Strong open parser | No (AGPL) |
+| `got-ocr`, `qwen-vl`, `internvl`, `nanonets` | VLM eval tools | Review model licenses |
+
 ### Analyze Providers
 
 | Provider | Description | Requirements |
@@ -124,6 +155,7 @@ pdftoolkit/
 ├── providers/
 │   ├── convert.py      # PDF conversion providers
 │   └── analyze.py      # Image analysis providers
+├── benchmark.py        # Benchmark harness and tool registry
 ├── clients.py          # API client singletons
 └── utils.py            # Shared utilities
 src/                    # Standalone scripts (reference implementations)

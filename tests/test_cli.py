@@ -18,7 +18,8 @@ class TestCLIHelp:
         assert result.exit_code == 0
         assert "convert" in result.output
         assert "analyze" in result.output
-        assert "PDF extraction and analysis toolkit" in result.output
+        assert "benchmark" in result.output
+        assert "PDF extraction, analysis, and benchmarking toolkit" in result.output
 
     def test_convert_help(self):
         """Convert help should show provider options."""
@@ -39,6 +40,15 @@ class TestCLIHelp:
         assert "ollama" in result.output
         assert "--query" in result.output
         assert "--threshold" in result.output
+
+    def test_benchmark_help(self):
+        """Benchmark help should show tool and output options."""
+        result = runner.invoke(app, ["benchmark", "--help"])
+        assert result.exit_code == 0
+        assert "--tool" in result.output
+        assert "-t" in result.output
+        assert "--output" in result.output
+        assert "docling" in result.output
 
 
 class TestProviderEnums:
@@ -98,3 +108,22 @@ class TestAnalyzeCommand:
         result = runner.invoke(app, ["analyze", str(tmp_path)])
         assert result.exit_code == 1
         assert "No image files" in result.output
+
+
+class TestBenchmarkCommand:
+    """Tests for benchmark command."""
+
+    def test_benchmark_missing_file(self, tmp_path):
+        """Benchmark should error on missing file."""
+        result = runner.invoke(app, ["benchmark", str(tmp_path / "nonexistent.pdf")])
+        assert result.exit_code == 1
+        assert "not found" in result.output.lower()
+
+    def test_benchmark_invalid_tool(self, tmp_path):
+        """Benchmark should reject unknown tool names."""
+        pdf_file = tmp_path / "sample.pdf"
+        pdf_file.write_text("pdf")
+
+        result = runner.invoke(app, ["benchmark", str(pdf_file), "-t", "unknown"])
+        assert result.exit_code == 1
+        assert "Unknown benchmark tool" in result.output
