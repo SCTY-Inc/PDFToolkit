@@ -65,7 +65,7 @@ pdftoolkit convert document.pdf -p markitdown
 pdftoolkit convert document.pdf -p megaparse
 
 # With options
-pdftoolkit convert document.pdf -p marker --describe  # Add AI image descriptions
+pdftoolkit convert document.pdf -p marker --describe  # Add AI image descriptions (marker only)
 pdftoolkit convert document.pdf -o custom_output/     # Custom output directory
 ```
 
@@ -108,6 +108,7 @@ pdftoolkit analyze chart.jpg -p colqwen -q "chart showing growth"
 ```bash
 pdftoolkit --help
 pdftoolkit convert --help
+pdftoolkit benchmark --help
 pdftoolkit analyze --help
 ```
 

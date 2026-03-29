@@ -28,4 +28,6 @@ src/                       # Reference scripts
 
 - `trash` not rm
 - API keys: OPENAI, MISTRAL, TOGETHER
+- `convert --describe` only works with `-p marker`
+- `benchmark` defaults are env-aware: always `docling`, plus `markitdown` with `OPENAI_API_KEY`, plus `mistral` with `MISTRAL_API_KEY`
 - Outputs: `output/`

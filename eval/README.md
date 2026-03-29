@@ -5,15 +5,17 @@ Compare PDF extraction tools on the same documents.
 ## Quick Start
 
 ```bash
-# Run all evaluations
+# Main supported CLI path: benchmark one PDF across providers
+pdftoolkit benchmark docs/verkada.pdf
+
+# Low-level eval harness
 python -m eval.run_eval docs/verkada.pdf
 
-# Run specific tool
+# Run one optional eval tool directly
 python -m eval.run_eval docs/verkada.pdf --tool mineru
-
-# Compare outputs
-python -m eval.compare output/eval/
 ```
+
+`eval/` is the lower-level research harness. The supported user-facing command is `pdftoolkit benchmark`.
 
 ## Metrics
 

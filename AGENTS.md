@@ -25,6 +25,13 @@
 | together | TOGETHER key |
 | colqwen | local GPU |
 
+## Benchmark (`pdftoolkit/benchmark.py`)
+
+| Mode | Behavior |
+|------|----------|
+| default | Runs commercial-safe runnable tools: `docling`, plus `markitdown` with `OPENAI_API_KEY`, plus `mistral` with `MISTRAL_API_KEY` |
+| explicit | Pass `-t/--tool` repeatedly to benchmark any registered provider |
+
 ## Extend
 
 1. Add fn to `providers/{convert,analyze}.py`
