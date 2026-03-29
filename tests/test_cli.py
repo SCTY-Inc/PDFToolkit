@@ -93,6 +93,15 @@ class TestConvertCommand:
         result = runner.invoke(app, ["convert", str(txt_file)])
         assert "Warning" in result.output or "may not be a PDF" in result.output
 
+    def test_convert_rejects_describe_without_marker(self, tmp_path):
+        """Figure description is only valid for the marker provider."""
+        pdf_file = tmp_path / "sample.pdf"
+        pdf_file.write_text("pdf")
+
+        result = runner.invoke(app, ["convert", str(pdf_file), "-p", "docling", "--describe"])
+        assert result.exit_code == 1
+        assert "--describe is only supported with marker" in result.output
+
 
 class TestAnalyzeCommand:
     """Tests for analyze command."""
@@ -127,3 +136,32 @@ class TestBenchmarkCommand:
         result = runner.invoke(app, ["benchmark", str(pdf_file), "-t", "unknown"])
         assert result.exit_code == 1
         assert "Unknown benchmark tool" in result.output
+
+    def test_benchmark_deduplicates_tool_names(self, tmp_path, monkeypatch):
+        """Repeated tool names should only run once."""
+        from pdftoolkit import cli
+
+        class DummyResult:
+            def __init__(self, tool: str):
+                self.tool = tool
+                self.success = True
+                self.error = None
+                self.time_seconds = 0.01
+                self.output_size_bytes = 1
+                self.commercial_use = "yes"
+
+        captured = {}
+
+        def fake_run_benchmark(input_path, output_dir, tool_names, registry):
+            captured["tool_names"] = tool_names
+            return [DummyResult(name) for name in tool_names]
+
+        monkeypatch.setattr(cli, "run_benchmark", fake_run_benchmark)
+        monkeypatch.setattr(cli, "save_results", lambda results, path: None)
+
+        pdf_file = tmp_path / "sample.pdf"
+        pdf_file.write_text("pdf")
+
+        result = runner.invoke(app, ["benchmark", str(pdf_file), "-t", "docling", "-t", "docling"])
+        assert result.exit_code == 0
+        assert captured["tool_names"] == ["docling"]

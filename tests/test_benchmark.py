@@ -13,12 +13,18 @@ from pdftoolkit.benchmark import (
 class TestBenchmarkDefaults:
     """Tests for default benchmark tool selection."""
 
-    def test_default_tools_match_integrated_providers(self):
-        """Benchmark should default to the integrated convert providers."""
-        assert get_default_benchmark_tools() == [
+    def test_default_tools_are_commercial_and_low_friction(self):
+        """Benchmark should default to the commercial-safe local baseline."""
+        assert get_default_benchmark_tools(env={}) == ["docling"]
+
+    def test_default_tools_expand_when_api_keys_are_present(self):
+        """Cloud/API-backed defaults should opt in when credentials are available."""
+        env = {
+            "OPENAI_API_KEY": "test-openai",
+            "MISTRAL_API_KEY": "test-mistral",
+        }
+        assert get_default_benchmark_tools(env=env) == [
             "docling",
-            "marker",
-            "megaparse",
             "markitdown",
             "mistral",
         ]
@@ -41,6 +47,7 @@ class TestRunTool:
             description="Dummy tool",
             commercial_use="yes",
             install_notes="",
+            default=True,
         )
 
         input_path = tmp_path / "sample.pdf"
@@ -68,6 +75,7 @@ class TestRunTool:
             description="Broken tool",
             commercial_use="review",
             install_notes="optional dependency",
+            default=False,
         )
 
         input_path = tmp_path / "sample.pdf"
@@ -104,6 +112,7 @@ class TestRunBenchmark:
                 description="First tool",
                 commercial_use="yes",
                 install_notes="",
+                default=True,
             ),
             "second": ToolSpec(
                 name="second",
@@ -111,6 +120,7 @@ class TestRunBenchmark:
                 description="Second tool",
                 commercial_use="no",
                 install_notes="",
+                default=False,
             ),
         }
 

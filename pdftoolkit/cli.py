@@ -1,5 +1,6 @@
 """CLI interface for PDFToolkit using Typer."""
 
+import os
 from enum import Enum
 from pathlib import Path
 
@@ -51,6 +52,47 @@ IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 BENCHMARK_TOOL_NAMES = ", ".join(get_tool_registry())
 
 
+def _error(message: str) -> None:
+    """Print an error and exit."""
+    rprint(f"[red]Error:[/red] {message}")
+    raise typer.Exit(1)
+
+
+def _warn(message: str) -> None:
+    """Print a warning."""
+    rprint(f"[yellow]Warning:[/yellow] {message}")
+
+
+def _ensure_exists(path: Path, label: str = "File") -> None:
+    """Exit if a required path does not exist."""
+    if not path.exists():
+        _error(f"{label} not found: {path}")
+
+
+def _warn_if_not_pdf(path: Path) -> None:
+    """Warn when a path does not look like a PDF."""
+    if path.suffix.lower() != ".pdf":
+        _warn(f"Input file may not be a PDF: {path}")
+
+
+def _require_env_vars(*names: str) -> None:
+    """Exit when required environment variables are missing."""
+    missing = [name for name in names if not os.getenv(name)]
+    if missing:
+        _error(f"Missing required environment variable(s): {', '.join(missing)}")
+
+
+def _collect_image_files(input_path: Path) -> list[Path]:
+    """Collect image files from a path or directory."""
+    if input_path.is_dir():
+        files = sorted(f for f in input_path.iterdir() if f.suffix.lower() in IMAGE_EXTENSIONS)
+        if not files:
+            _error(f"No image files found in: {input_path}")
+        return files
+
+    return [input_path]
+
+
 @app.command()
 def convert(
     input_path: Path = typer.Argument(..., help="Input PDF file"),
@@ -59,12 +101,16 @@ def convert(
     describe: bool = typer.Option(False, "--describe", help="Add AI image descriptions (marker only)"),
 ) -> None:
     """Convert PDF to markdown."""
-    if not input_path.exists():
-        rprint(f"[red]Error:[/red] File not found: {input_path}")
-        raise typer.Exit(1)
+    _ensure_exists(input_path)
+    _warn_if_not_pdf(input_path)
 
-    if not input_path.suffix.lower() == ".pdf":
-        rprint(f"[yellow]Warning:[/yellow] Input file may not be a PDF: {input_path}")
+    if describe and provider is not ConvertProvider.marker:
+        _error("--describe is only supported with marker")
+
+    if provider is ConvertProvider.markitdown:
+        _require_env_vars("OPENAI_API_KEY")
+    elif provider is ConvertProvider.mistral:
+        _require_env_vars("MISTRAL_API_KEY")
 
     from pdftoolkit.providers import (
         convert_docling,
@@ -76,17 +122,20 @@ def convert(
 
     rprint(f"Converting [cyan]{input_path}[/cyan] with [green]{provider.value}[/green]...")
 
-    match provider:
-        case ConvertProvider.docling:
-            output_path = convert_docling(input_path, output)
-        case ConvertProvider.marker:
-            output_path = convert_marker(input_path, output, describe=describe)
-        case ConvertProvider.megaparse:
-            output_path = convert_megaparse(input_path, output)
-        case ConvertProvider.markitdown:
-            output_path = convert_markitdown(input_path, output)
-        case ConvertProvider.mistral:
-            output_path = convert_mistral(input_path, output)
+    try:
+        match provider:
+            case ConvertProvider.docling:
+                output_path = convert_docling(input_path, output)
+            case ConvertProvider.marker:
+                output_path = convert_marker(input_path, output, describe=describe)
+            case ConvertProvider.megaparse:
+                output_path = convert_megaparse(input_path, output)
+            case ConvertProvider.markitdown:
+                output_path = convert_markitdown(input_path, output)
+            case ConvertProvider.mistral:
+                output_path = convert_mistral(input_path, output)
+    except ImportError as exc:
+        _error(f"Provider '{provider.value}' is not available: {exc}")
 
     rprint(f"[green]Saved:[/green] {output_path}")
 
@@ -99,9 +148,10 @@ def analyze(
     threshold: float = typer.Option(0.5, "--threshold", help="Confidence threshold for chart detection"),
 ) -> None:
     """Analyze images/charts with vision models."""
-    if not input_path.exists():
-        rprint(f"[red]Error:[/red] Path not found: {input_path}")
-        raise typer.Exit(1)
+    _ensure_exists(input_path, label="Path")
+
+    if provider is AnalyzeProvider.together:
+        _require_env_vars("TOGETHER_API_KEY")
 
     from pdftoolkit.providers import (
         analyze_ollama,
@@ -109,14 +159,7 @@ def analyze(
         analyze_colqwen,
     )
 
-    # Collect files to process (case-insensitive extension matching)
-    if input_path.is_dir():
-        files = [f for f in input_path.iterdir() if f.suffix.lower() in IMAGE_EXTENSIONS]
-        if not files:
-            rprint(f"[yellow]No image files found in:[/yellow] {input_path}")
-            raise typer.Exit(1)
-    else:
-        files = [input_path]
+    files = _collect_image_files(input_path)
 
     for file_path in files:
         rprint(f"\nAnalyzing [cyan]{file_path}[/cyan] with [green]{provider.value}[/green]...")
@@ -155,21 +198,18 @@ def benchmark(
     output: Path = typer.Option(Path("output/benchmark"), "-o", "--output", help="Benchmark output directory"),
 ) -> None:
     """Benchmark one PDF across multiple extraction tools."""
-    if not input_path.exists():
-        rprint(f"[red]Error:[/red] File not found: {input_path}")
-        raise typer.Exit(1)
-
-    if input_path.suffix.lower() != ".pdf":
-        rprint(f"[yellow]Warning:[/yellow] Input file may not be a PDF: {input_path}")
+    _ensure_exists(input_path)
+    _warn_if_not_pdf(input_path)
 
     registry = get_tool_registry()
-    selected_tools = tool or get_default_benchmark_tools()
-    selected_tools = list(dict.fromkeys(selected_tools))
+    selected_tools = list(dict.fromkeys(tool or get_default_benchmark_tools(registry=registry)))
 
     unknown_tools = [name for name in selected_tools if name not in registry]
     if unknown_tools:
-        rprint(f"[red]Error:[/red] Unknown benchmark tool(s): {', '.join(unknown_tools)}")
-        raise typer.Exit(1)
+        _error(f"Unknown benchmark tool(s): {', '.join(unknown_tools)}")
+
+    if not selected_tools:
+        _error("No benchmark tools are runnable by default. Set API keys or pass --tool explicitly.")
 
     run_dir = output / input_path.stem
     run_dir.mkdir(parents=True, exist_ok=True)

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
+import os
+from collections.abc import Mapping
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from time import perf_counter
 from typing import Callable
@@ -21,6 +23,8 @@ class ToolSpec:
     description: str
     commercial_use: str
     install_notes: str
+    default: bool = False
+    required_env: tuple[str, ...] = field(default_factory=tuple)
 
 
 @dataclass
@@ -120,6 +124,7 @@ def get_tool_registry() -> dict[str, ToolSpec]:
             description="IBM Docling markdown conversion",
             commercial_use="yes",
             install_notes="Included by default",
+            default=True,
         ),
         "marker": ToolSpec(
             name="marker",
@@ -140,7 +145,9 @@ def get_tool_registry() -> dict[str, ToolSpec]:
             runner=_run_markitdown,
             description="Microsoft MarkItDown conversion",
             commercial_use="yes",
-            install_notes="Included by default",
+            install_notes="Requires OPENAI_API_KEY",
+            default=True,
+            required_env=("OPENAI_API_KEY",),
         ),
         "mistral": ToolSpec(
             name="mistral",
@@ -148,6 +155,8 @@ def get_tool_registry() -> dict[str, ToolSpec]:
             description="Mistral OCR API markdown extraction",
             commercial_use="yes",
             install_notes="Requires MISTRAL_API_KEY",
+            default=True,
+            required_env=("MISTRAL_API_KEY",),
         ),
         "mineru": ToolSpec(
             name="mineru",
@@ -201,9 +210,24 @@ def get_tool_registry() -> dict[str, ToolSpec]:
     }
 
 
-def get_default_benchmark_tools() -> list[str]:
+def _has_required_env(spec: ToolSpec, env: Mapping[str, str]) -> bool:
+    """Return True when the tool's required environment variables are present."""
+    return all(env.get(name) for name in spec.required_env)
+
+
+def get_default_benchmark_tools(
+    registry: dict[str, ToolSpec] | None = None,
+    env: Mapping[str, str] | None = None,
+) -> list[str]:
     """Return the default benchmark tool order."""
-    return ["docling", "marker", "megaparse", "markitdown", "mistral"]
+    registry = registry or get_tool_registry()
+    env = os.environ if env is None else env
+
+    return [
+        name
+        for name, spec in registry.items()
+        if spec.default and _has_required_env(spec, env)
+    ]
 
 
 def run_tool(spec: ToolSpec, input_path: Path, output_dir: Path) -> BenchmarkResult:

@@ -72,17 +72,17 @@ pdftoolkit convert document.pdf -o custom_output/     # Custom output directory
 ### Benchmark a PDF Across Parsers
 
 ```bash
-# Benchmark the integrated providers on one PDF
+# Benchmark the default runnable commercial-safe tools
 pdftoolkit benchmark document.pdf
 
-# Benchmark a commercial-friendly subset
+# Benchmark an explicit commercial-friendly subset
 pdftoolkit benchmark document.pdf -t docling -t markitdown -t mistral
 
 # Benchmark optional research tools (if installed)
 pdftoolkit benchmark document.pdf -t mineru -t olmocr -t paddleocr
 ```
 
-Outputs are written under `output/benchmark/<document-stem>/`, with a `results.json` summary and per-tool output directories.
+By default, `benchmark` runs the low-friction commercial tool set that is currently runnable in your environment. Outputs are written under `output/benchmark/<document-stem>/`, with a `results.json` summary and per-tool output directories.
 
 ### Analyze Images/Charts
 
